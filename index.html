@@ -14,13 +14,25 @@
 </head>
 <body>
 
-  <!-- ===== CONTACT FAB ===== -->
-  <div class="contact-fab" id="contactFab" onclick="toggleContact()" role="button" aria-label="Contact Developer">
-    <svg class="fab-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-    </svg>
-    <span class="fab-label">Contact Developer</span>
-  </div>
+  <!-- ===== TOP NAVBAR ===== -->
+  <nav class="topnav" id="topnav">
+    <div class="topnav-links">
+      <a href="https://www.kzu.ac.in/" target="_blank" rel="noopener" class="topnav-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span>Official Website</span>
+      </a>
+      <a href="https://www.instagram.com/kazirangauni/" target="_blank" rel="noopener" class="topnav-link instagram">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        <span>Follow on Instagram</span>
+      </a>
+    </div>
+    <button class="topnav-contact-btn" id="contactFab" onclick="toggleContact()" aria-label="Contact Developer">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+      <span>Contact Developer</span>
+    </button>
+  </nav>
 
   <!-- ===== CONTACT PANEL ===== -->
   <div class="contact-panel" id="contactPanel" role="dialog" aria-label="Developer Contact">
@@ -56,7 +68,7 @@
 
     <header>
       <img src="logo.png" alt="KU Logo" class="logo">
-      <h1>Kaziranga University</h1>
+      <h1>KU Grade Calculator</h1>
     </header>
 
     <div class="notice-bar" id="noticeBar" onclick="toggleNotice()" aria-expanded="false">
@@ -65,27 +77,44 @@
       <svg class="notice-chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
     </div>
     <div class="notice-content" id="noticeContent">
-      Subjects and credit structures listed in this calculator are strictly based on the
-      <strong>2023 Batch CSE Curriculum</strong> of Kaziranga University.
-      They may differ from other batches, programmes, or departments.
+      <ul class="notice-list">
+        <li>
+          <strong>Curriculum Scope:</strong> All subjects and credit values are based strictly on the
+          <strong>2023 Batch CSE Curriculum</strong> of Kaziranga University. Students from other batches or
+          departments may have different subjects or credit distributions.
+        </li>
+        <li>
+          <strong>Grading System:</strong> Marks are converted to grades as follows —
+          O (90–100), A+ (80–89), A (70–79), B+ (60–69), B (50–59), C (40–49), F (below 40).
+          Grade points: O=10, A+=9, A=8, B+=7, B=6, C=5, F=0.
+        </li>
+        <li>
+          <strong>For Reference Only:</strong> This calculator is an unofficial tool meant to help
+          students estimate their SGPA/CGPA. Always verify results with your official university records.
+        </li>
+      </ul>
     </div>
 
     <!-- ===== SGPA SECTION ===== -->
     <section class="card" id="sgpaSection">
       <h2>SGPA Calculator</h2>
 
-      <label for="semesterSelect">Select Semester</label>
-      <select id="semesterSelect">
-        <option value="">-- Select Semester --</option>
-        <option value="1">Semester 1</option>
-        <option value="2">Semester 2</option>
-        <option value="3">Semester 3</option>
-        <option value="4">Semester 4</option>
-        <option value="5">Semester 5</option>
-        <option value="6">Semester 6</option>
-        <option value="7">Semester 7</option>
-        <option value="8">Semester 8</option>
-      </select>
+      <label>Select Semester</label>
+      <div class="drum-picker-wrap">
+        <div class="drum-picker-center"></div>
+        <div class="drum-picker-scroll" id="semesterSelect">
+          <div class="drum-pad"></div>
+          <div class="drum-item" data-val="1">Sem 1</div>
+          <div class="drum-item" data-val="2">Sem 2</div>
+          <div class="drum-item" data-val="3">Sem 3</div>
+          <div class="drum-item" data-val="4">Sem 4</div>
+          <div class="drum-item" data-val="5">Sem 5</div>
+          <div class="drum-item" data-val="6">Sem 6</div>
+          <div class="drum-item" data-val="7">Sem 7</div>
+          <div class="drum-item" data-val="8">Sem 8</div>
+          <div class="drum-pad"></div>
+        </div>
+      </div>
 
       <div id="subjectsContainer"></div>
 
@@ -119,18 +148,22 @@
     <section class="card" id="cgpaSection">
       <h2>CGPA Calculator</h2>
 
-      <label for="cgpaSemester">Select Current Semester</label>
-      <select id="cgpaSemester">
-        <option value="">-- Select Semester --</option>
-        <option value="1">Semester 1</option>
-        <option value="2">Semester 2</option>
-        <option value="3">Semester 3</option>
-        <option value="4">Semester 4</option>
-        <option value="5">Semester 5</option>
-        <option value="6">Semester 6</option>
-        <option value="7">Semester 7</option>
-        <option value="8">Semester 8</option>
-      </select>
+      <label>Select Current Semester</label>
+      <div class="drum-picker-wrap">
+        <div class="drum-picker-center"></div>
+        <div class="drum-picker-scroll" id="cgpaSemester">
+          <div class="drum-pad"></div>
+          <div class="drum-item" data-val="1">Sem 1</div>
+          <div class="drum-item" data-val="2">Sem 2</div>
+          <div class="drum-item" data-val="3">Sem 3</div>
+          <div class="drum-item" data-val="4">Sem 4</div>
+          <div class="drum-item" data-val="5">Sem 5</div>
+          <div class="drum-item" data-val="6">Sem 6</div>
+          <div class="drum-item" data-val="7">Sem 7</div>
+          <div class="drum-item" data-val="8">Sem 8</div>
+          <div class="drum-pad"></div>
+        </div>
+      </div>
 
       <div id="cgpaInputs"></div>
 

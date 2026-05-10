@@ -12,32 +12,42 @@ function marksToGrade(marks) {
 }
 
 function gradeClass(g) {
-  return { "O":"grade-O","A+":"grade-Ap","A":"grade-A","B+":"grade-Bp","B":"grade-B","C":"grade-C","F":"grade-F" }[g] || "grade-na";
+  return { "O": "grade-O", "A+": "grade-Ap", "A": "grade-A", "B+": "grade-Bp", "B": "grade-B", "C": "grade-C", "F": "grade-F" }[g] || "grade-na";
 }
 
 function gradeColor(g) {
-  return { "O":"#1a7a3a","A+":"#0055aa","A":"#006699","B+":"#3a6600","B":"#776600","C":"#884400","F":"#880000" }[g] || "#aaa";
+  return { "O": "#1a7a3a", "A+": "#0055aa", "A": "#006699", "B+": "#3a6600", "B": "#776600", "C": "#884400", "F": "#880000" }[g] || "#aaa";
 }
 
 function gradeBarColor(g) {
-  return { "O":"#2ecc71","A+":"#3498db","A":"#5dade2","B+":"#82e03a","B":"#f4d03f","C":"#e67e22","F":"#e74c3c" }[g] || "#ccc";
+  return { "O": "#2ecc71", "A+": "#3498db", "A": "#5dade2", "B+": "#82e03a", "B": "#f4d03f", "C": "#e67e22", "F": "#e74c3c" }[g] || "#ccc";
 }
 
 function sgpaLabel(sgpa) {
   const s = parseFloat(sgpa);
-  if (s >= 9)   return "Outstanding";
-  if (s >= 8)   return "Excellent";
-  if (s >= 7)   return "Very Good";
-  if (s >= 6)   return "Good";
-  if (s >= 5)   return "Satisfactory";
+  if (s >= 9) return "Outstanding";
+  if (s >= 8) return "Excellent";
+  if (s >= 7) return "Very Good";
+  if (s >= 6) return "Good";
+  if (s >= 5) return "Satisfactory";
   return "Needs Improvement";
 }
 
+// ─── Navbar glass on scroll ───────────────────────────────────
+window.addEventListener('scroll', () => {
+  const nav = document.getElementById('topnav');
+  if (window.scrollY > 10) {
+    nav.classList.add('scrolled');
+  } else {
+    nav.classList.remove('scrolled');
+  }
+});
+
 // ─── Notice toggle ────────────────────────────────────────────
 function toggleNotice() {
-  const bar     = document.getElementById('noticeBar');
+  const bar = document.getElementById('noticeBar');
   const content = document.getElementById('noticeContent');
-  const isOpen  = content.classList.contains('open');
+  const isOpen = content.classList.contains('open');
   if (isOpen) {
     content.classList.remove('open');
     bar.setAttribute('aria-expanded', 'false');
@@ -49,10 +59,10 @@ function toggleNotice() {
 
 // ─── Contact panel toggle ──────────────────────────────────────
 function toggleContact() {
-  const panel   = document.getElementById('contactPanel');
-  const fab     = document.getElementById('contactFab');
+  const panel = document.getElementById('contactPanel');
+  const fab = document.getElementById('contactFab');
   const overlay = document.getElementById('overlay');
-  const isOpen  = panel.classList.contains('open');
+  const isOpen = panel.classList.contains('open');
   if (isOpen) {
     panel.classList.remove('open');
     fab.classList.remove('active');
@@ -65,22 +75,61 @@ function toggleContact() {
 }
 
 // ─── SGPA Section ──────────────────────────────────────────────
-const semesterSelect    = document.getElementById("semesterSelect");
+const semesterSelect = document.getElementById("semesterSelect");
 const subjectsContainer = document.getElementById("subjectsContainer");
-const calculateSGPA     = document.getElementById("calculateSGPA");
-const sgpaResultBox     = document.getElementById("sgpaResultBox");
-const sgpaScore         = document.getElementById("sgpaScore");
-const sgpaGradeLabel    = document.getElementById("sgpaGradeLabel");
-const impactAnalysis    = document.getElementById("impactAnalysis");
-const impactList        = document.getElementById("impactList");
-const whatIfBox         = document.getElementById("whatIfBox");
-const whatIfList        = document.getElementById("whatIfList");
-const whatIfResult      = document.getElementById("whatIfResult");
+const calculateSGPA = document.getElementById("calculateSGPA");
+const sgpaResultBox = document.getElementById("sgpaResultBox");
+const sgpaScore = document.getElementById("sgpaScore");
+const sgpaGradeLabel = document.getElementById("sgpaGradeLabel");
+const impactAnalysis = document.getElementById("impactAnalysis");
+const impactList = document.getElementById("impactList");
+const whatIfBox = document.getElementById("whatIfBox");
+const whatIfList = document.getElementById("whatIfList");
+const whatIfResult = document.getElementById("whatIfResult");
+
+// ─── Drum Picker Setup ──────────────────────────────────────────
+function initDrumPicker(pickerId, callback) {
+  const scrollContainer = document.getElementById(pickerId);
+  if (!scrollContainer) return;
+  const items = scrollContainer.querySelectorAll(".drum-item");
+  let activeValue = null;
+
+  items.forEach(item => {
+    item.addEventListener("click", () => {
+      item.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    });
+  });
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const val = entry.target.dataset.val;
+        if (val !== activeValue) {
+          activeValue = val;
+          items.forEach(i => i.classList.remove("active"));
+          entry.target.classList.add("active");
+          if (navigator.vibrate) navigator.vibrate(12);
+          callback(val);
+        }
+      }
+    });
+  }, {
+    root: scrollContainer,
+    rootMargin: "0px -50% 0px -50%",
+    threshold: 0
+  });
+
+  items.forEach(item => observer.observe(item));
+
+  // Init first
+  setTimeout(() => {
+    scrollContainer.scrollTo({ left: 0, behavior: "instant" });
+  }, 100);
+}
 
 let currentSemSubjects = [];
 
-semesterSelect.addEventListener("change", () => {
-  const semester = semesterSelect.value;
+initDrumPicker("semesterSelect", (semester) => {
   subjectsContainer.innerHTML = "";
   sgpaResultBox.classList.add("hidden");
   impactAnalysis.classList.add("hidden");
@@ -143,18 +192,18 @@ semesterSelect.addEventListener("change", () => {
 calculateSGPA.addEventListener("click", () => {
   const inputs = document.querySelectorAll(".marks-input");
   let totalCredits = 0, totalPoints = 0;
-  let gradeCounts = { O:0,"A+":0,A:0,"B+":0,B:0,C:0,F:0 };
+  let gradeCounts = { O: 0, "A+": 0, A: 0, "B+": 0, B: 0, C: 0, F: 0 };
   let impacts = [];
 
   inputs.forEach(input => {
-    const marks  = parseFloat(input.value);
+    const marks = parseFloat(input.value);
     const credit = Number(input.dataset.credit);
-    const subj   = input.dataset.subject;
+    const subj = input.dataset.subject;
     if (!isNaN(marks) && input.value !== "") {
       const g = marksToGrade(marks);
       const pts = gradePoints[g] * credit;
       totalCredits += credit;
-      totalPoints  += pts;
+      totalPoints += pts;
       gradeCounts[g]++;
       impacts.push({ subject: subj, credit, grade: g, pts });
     }
@@ -219,7 +268,7 @@ function buildGradeChart(counts) {
   if (gradeChartInstance) gradeChartInstance.destroy();
 
   const labels = Object.keys(counts).filter(k => counts[k] > 0);
-  const data   = labels.map(k => counts[k]);
+  const data = labels.map(k => counts[k]);
   const colors = labels.map(k => gradeBarColor(k));
 
   gradeChartInstance = new Chart(ctx, {
@@ -251,7 +300,7 @@ function buildWhatIf() {
   currentSemSubjects.forEach((item, i) => {
     const row = document.createElement("div");
     row.className = "whatif-row";
-    const gradeOptions = ["O","A+","A","B+","B","C","F"]
+    const gradeOptions = ["O", "A+", "A", "B+", "B", "C", "F"]
       .map(g => `<option value="${g}">${g} (${gradePoints[g]})</option>`).join("");
     row.innerHTML = `
       <div class="whatif-name">${item.subject} <small style="color:#aaa">(${item.credit}cr)</small></div>
@@ -266,14 +315,14 @@ function buildWhatIf() {
 }
 
 function recomputeWhatIf() {
-  const realInputs  = document.querySelectorAll(".marks-input");
+  const realInputs = document.querySelectorAll(".marks-input");
   const whatIfSelects = document.querySelectorAll(".whatif-select");
 
   let totalCredits = 0, totalPoints = 0;
 
   currentSemSubjects.forEach((item, i) => {
     const realInput = realInputs[i];
-    const wiSel     = whatIfSelects[i];
+    const wiSel = whatIfSelects[i];
 
     // Prefer what-if selection, else real marks
     let grade = null;
@@ -285,7 +334,7 @@ function recomputeWhatIf() {
 
     if (grade) {
       totalCredits += item.credit;
-      totalPoints  += item.credit * gradePoints[grade];
+      totalPoints += item.credit * gradePoints[grade];
     }
   });
 
@@ -300,19 +349,19 @@ function recomputeWhatIf() {
 
 // ─── CGPA Section ──────────────────────────────────────────────
 const cgpaSemesterSel = document.getElementById("cgpaSemester");
-const cgpaInputsDiv   = document.getElementById("cgpaInputs");
-const calculateCGPA   = document.getElementById("calculateCGPA");
-const cgpaResultBox   = document.getElementById("cgpaResultBox");
-const cgpaScore       = document.getElementById("cgpaScore");
-const cgpaGradeLabel  = document.getElementById("cgpaGradeLabel");
+const cgpaInputsDiv = document.getElementById("cgpaInputs");
+const calculateCGPA = document.getElementById("calculateCGPA");
+const cgpaResultBox = document.getElementById("cgpaResultBox");
+const cgpaScore = document.getElementById("cgpaScore");
+const cgpaGradeLabel = document.getElementById("cgpaGradeLabel");
 const performanceSummary = document.getElementById("performanceSummary");
-const perfGrid        = document.getElementById("perfGrid");
-const cgpaChartBox    = document.getElementById("cgpaChartBox");
+const perfGrid = document.getElementById("perfGrid");
+const cgpaChartBox = document.getElementById("cgpaChartBox");
 
 let cgpaChartInstance = null;
 
-cgpaSemesterSel.addEventListener("change", () => {
-  const sem = Number(cgpaSemesterSel.value);
+initDrumPicker("cgpaSemester", (semStr) => {
+  const sem = Number(semStr);
   cgpaInputsDiv.innerHTML = "";
   cgpaResultBox.classList.add("hidden");
   performanceSummary.classList.add("hidden");
@@ -343,7 +392,7 @@ calculateCGPA.addEventListener("click", () => {
       total += v; count++;
       values.push(v);
       labels.push("Sem " + s);
-      if (v > best)  { best = v;  bestSem  = s; }
+      if (v > best) { best = v; bestSem = s; }
       if (v < worst) { worst = v; worstSem = s; }
     }
   });
@@ -363,7 +412,7 @@ calculateCGPA.addEventListener("click", () => {
   let trend = "—";
   if (values.length >= 2) {
     const recent = values[values.length - 1];
-    const prev   = values[values.length - 2];
+    const prev = values[values.length - 2];
     trend = recent > prev ? "Improving" : recent < prev ? "Declining" : "Stable";
   }
 
@@ -435,29 +484,29 @@ function buildCGPAChart(labels, values) {
 // ─── Target CGPA Planner ──────────────────────────────────────
 document.getElementById("plannerCalculate").addEventListener("click", () => {
   const completed = parseInt(document.getElementById("plannerCompleted").value);
-  const current   = parseFloat(document.getElementById("plannerCurrentCGPA").value);
-  const goal      = parseFloat(document.getElementById("plannerGoal").value);
-  const resultEl  = document.getElementById("plannerResult");
+  const current = parseFloat(document.getElementById("plannerCurrentCGPA").value);
+  const goal = parseFloat(document.getElementById("plannerGoal").value);
+  const resultEl = document.getElementById("plannerResult");
 
   if (!completed || isNaN(current) || isNaN(goal)) {
     resultEl.innerHTML = "Please fill in all three fields.";
-    resultEl.classList.remove("hidden","planner-impossible");
+    resultEl.classList.remove("hidden", "planner-impossible");
     return;
   }
 
-  const totalSems    = 8;
-  const remaining    = totalSems - completed;
+  const totalSems = 8;
+  const remaining = totalSems - completed;
 
   if (remaining <= 0) {
     resultEl.innerHTML = "You've completed all 8 semesters!";
-    resultEl.classList.remove("hidden","planner-impossible");
+    resultEl.classList.remove("hidden", "planner-impossible");
     return;
   }
 
   // Required: goal * totalSems = current * completed + required * remaining
   const required = (goal * totalSems - current * completed) / remaining;
 
-  resultEl.classList.remove("hidden","planner-impossible");
+  resultEl.classList.remove("hidden", "planner-impossible");
 
   if (required > 10) {
     resultEl.classList.add("planner-impossible");
