@@ -1,5 +1,15 @@
 // script.js
 
+function marksToGrade(marks) {
+  if (marks >= 90) return "O";
+  if (marks >= 80) return "A+";
+  if (marks >= 70) return "A";
+  if (marks >= 60) return "B+";
+  if (marks >= 50) return "B";
+  if (marks >= 40) return "C";
+  return "F";
+}
+
 const semesterSelect = document.getElementById("semesterSelect");
 const subjectsContainer = document.getElementById("subjectsContainer");
 const calculateSGPA = document.getElementById("calculateSGPA");
@@ -27,16 +37,7 @@ semesterSelect.addEventListener("change", () => {
         Credit: ${item.credit}
       </div>
 
-      <select class="grade-select" data-credit="${item.credit}">
-        <option value="">Grade</option>
-        <option value="O">O</option>
-        <option value="A+">A+</option>
-        <option value="A">A</option>
-        <option value="B+">B+</option>
-        <option value="B">B</option>
-        <option value="C">C</option>
-        <option value="F">F</option>
-      </select>
+      <input type="number" class="marks-input" data-credit="${item.credit}" min="0" max="100" placeholder="Marks">
     `;
 
     subjectsContainer.appendChild(row);
@@ -47,20 +48,20 @@ semesterSelect.addEventListener("change", () => {
 
 calculateSGPA.addEventListener("click", () => {
 
-  const grades = document.querySelectorAll(".grade-select");
+  const marksInputs = document.querySelectorAll(".marks-input");
 
   let totalCredits = 0;
   let totalPoints = 0;
 
-  grades.forEach(select => {
+  marksInputs.forEach(input => {
 
-    const grade = select.value;
-    const credit = Number(select.dataset.credit);
+    const marks = parseFloat(input.value);
+    const credit = Number(input.dataset.credit);
 
-    if(grade !== ""){
+    if(!isNaN(marks) && marks !== ""){
 
       totalCredits += credit;
-      totalPoints += credit * gradePoints[grade];
+      totalPoints += credit * gradePoints[marksToGrade(marks)];
 
     }
 
@@ -68,7 +69,7 @@ calculateSGPA.addEventListener("click", () => {
 
   if(totalCredits === 0){
 
-    sgpaResult.innerText = "Please enter grades.";
+    sgpaResult.innerText = "Please enter marks.";
     return;
 
   }
