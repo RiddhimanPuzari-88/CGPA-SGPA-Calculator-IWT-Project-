@@ -21,7 +21,7 @@ const semesterData = {
     { subject: "Innovation and Entrepreneurship", credit: 2 },
     { subject: "Python Programming", credit: 2 },
     { subject: "Environmental Studies", credit: 2 },
-    { subject: "Internship-I", credit: 1 }
+    { subject: "Certificate-I", credit: 1 }
   ],
 
   3: [
@@ -43,7 +43,7 @@ const semesterData = {
     { subject: "Software Engineering", credit: 3 },
     { subject: "Formal Language and Automata Theory", credit: 3 },
     { subject: "Fundamentals of Big Data", credit: 3 },
-    { subject: "Internship-II", credit: 1 },
+    { subject: "Certificate-II", credit: 1 },
     { subject: "Python Programming Laboratory", credit: 2 },
     { subject: "Microprocessor Laboratory", credit: 1 }
   ],
@@ -70,8 +70,7 @@ const semesterData = {
     { subject: "Cloud Computing", credit: 3 },
     { subject: "Professional Skills-II", credit: 1 },
     { subject: "Data Analytics using Python", credit: 3 },
-    { subject: "Internship-III", credit: 1 },
-    { subject: "Seminar", credit: 1 },
+    { subject: "Certificate-III", credit: 1 },
     { subject: "Data Analytics Lab", credit: 1 }
   ],
 
@@ -85,7 +84,7 @@ const semesterData = {
   ],
 
   8: [
-    { subject: "Internship-IV", credit: 1 },
+    { subject: "Certificate-IV", credit: 1 },
     { subject: "Project Phase-II", credit: 8 }
   ]
 
