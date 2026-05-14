@@ -1,5 +1,22 @@
 // script.js
 
+// ─── Load data: prefer admin-saved localStorage, else default ──
+const ADMIN_STORAGE_KEY = "kuAdminSemesterData";
+(function mergeAdminData() {
+  const stored = localStorage.getItem(ADMIN_STORAGE_KEY);
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      // Override semesterData with admin-saved data
+      for (let s = 1; s <= 8; s++) {
+        if (parsed[s]) semesterData[s] = parsed[s];
+      }
+    } catch (e) {
+      console.warn("KU Calculator: Could not load admin data from localStorage.", e);
+    }
+  }
+})();
+
 // ─── Grade helpers ─────────────────────────────────────────────
 function marksToGrade(marks) {
   if (marks >= 90) return "O";
