@@ -7,7 +7,7 @@ PROJECT TITLE   : KU SGPA & CGPA Grade Calculator
 SUBJECT         : Internet and Web Technologies (IWT)
 DEPARTMENT      : Computer Science and Engineering (CSE)
 UNIVERSITY      : Kaziranga University
-BATCH           : 2023
+BATCH           : General (All CSE Batches)
 SEMESTER        : 6th Semester
 
 
@@ -29,7 +29,7 @@ PROJECT DESCRIPTION
 --------------------------------------------------------------------------------
 
 This is a fully functional, responsive web application built for Kaziranga
-University's CSE 2023 batch students to calculate their SGPA (Semester Grade
+University's CSE students to calculate their SGPA (Semester Grade
 Point Average) and CGPA (Cumulative Grade Point Average) based on the official
 university grading system.
 
@@ -120,6 +120,10 @@ ADMIN CREDENTIALS
   Admin 2:
     Username : riddhi
     Password : riddhi1234
+
+  Admin 3:
+    Username : priya
+    Password : priya1234
 
 
 --------------------------------------------------------------------------------

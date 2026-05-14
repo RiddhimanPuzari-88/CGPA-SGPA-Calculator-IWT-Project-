@@ -3,7 +3,8 @@
 // ─── Admin Accounts ──────────────────────────────────────────
 const ADMIN_ACCOUNTS = [
   { username: "tandrali", password: "tandrali123", displayName: "Tandrali" },
-  { username: "riddhi",   password: "riddhi1234",  displayName: "Riddhiman" }
+  { username: "riddhi",   password: "riddhi1234",  displayName: "Riddhiman" },
+  { username: "priya",    password: "priya1234",   displayName: "Priya" }
 ];
 const STORAGE_KEY    = "kuAdminSemesterData";
 const SESSION_KEY    = "kuAdminLoggedIn";
