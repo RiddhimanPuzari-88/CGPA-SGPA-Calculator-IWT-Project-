@@ -1,23 +1,101 @@
 // script.js
 
-// ─── Load data: prefer admin-saved localStorage, else default ──
+// ─── Firebase + localStorage data sync ────────────────────────
 const ADMIN_STORAGE_KEY = "kuAdminSemesterData";
-(function mergeAdminData() {
+let currentActiveSem = null; // tracks which semester the user has open
+
+(function applyLocalCache() {
+  // Apply localStorage cache immediately so the page is never blank
   const stored = localStorage.getItem(ADMIN_STORAGE_KEY);
   if (stored) {
     try {
       const parsed = JSON.parse(stored);
-      // Override semesterData with admin-saved data
       for (let s = 1; s <= 8; s++) {
         if (parsed[s]) semesterData[s] = parsed[s];
       }
-    } catch (e) {
-      console.warn("KU Calculator: Could not load admin data from localStorage.", e);
-    }
+    } catch (e) { /* use defaults */ }
   }
 })();
 
+function initFirebaseSync() {
+  if (typeof firebase === "undefined") return;
+  try {
+    const db = firebase.database();
+    db.ref("semesterData").on("value", (snapshot) => {
+      const fbData = snapshot.val();
+      if (!fbData) return;
+
+      let changed = false;
+      for (let s = 1; s <= 8; s++) {
+        if (fbData[s]) {
+          const arr = Array.isArray(fbData[s]) ? fbData[s] : Object.values(fbData[s]);
+          semesterData[s] = arr;
+          changed = true;
+        }
+      }
+      if (!changed) return;
+
+      // Update localStorage cache
+      localStorage.setItem(ADMIN_STORAGE_KEY, JSON.stringify(semesterData));
+
+      // If a semester is currently displayed, refresh it live
+      if (currentActiveSem) {
+        currentSemSubjects = semesterData[currentActiveSem] || [];
+        renderCurrentSemester();
+      }
+    });
+  } catch (e) {
+    console.warn("KU Calculator: Firebase sync failed, using cached data.", e);
+  }
+}
+
+// Called after a semester is rendered — refreshes without resetting scroll
+function renderCurrentSemester() {
+  const container = document.getElementById("subjectsContainer");
+  if (!container || !currentActiveSem) return;
+  container.innerHTML = "";
+  document.getElementById("sgpaResultBox").classList.add("hidden");
+  document.getElementById("impactAnalysis").classList.add("hidden");
+  document.getElementById("whatIfBox").classList.add("hidden");
+
+  currentSemSubjects.forEach((item, index) => {
+    const isHeavy = item.credit >= 4;
+    const row = document.createElement("div");
+    row.classList.add("subject-row");
+    row.innerHTML = `
+      <div class="subject-name-wrap">
+        <span class="subject-name">${item.subject}</span>
+        ${isHeavy ? `<span class="badge-important">High Credit</span>` : ""}
+      </div>
+      <span class="credit-tag">${item.credit} Credit</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <input type="number" class="marks-input" id="marks-${index}"
+          data-credit="${item.credit}" data-subject="${item.subject}" data-index="${index}"
+          min="0" max="100" placeholder="Marks">
+        <span class="grade-display grade-na" id="grade-disp-${index}">--</span>
+      </div>`;
+    container.appendChild(row);
+
+    const inp   = row.querySelector(`#marks-${index}`);
+    const gDisp = row.querySelector(`#grade-disp-${index}`);
+    inp.addEventListener("input", () => {
+      const val = parseFloat(inp.value);
+      if (!isNaN(val) && val >= 0 && val <= 100) {
+        const g = marksToGrade(val);
+        gDisp.textContent = g;
+        gDisp.className = `grade-display ${gradeClass(g)}`;
+      } else {
+        gDisp.textContent = "--";
+        gDisp.className = "grade-display grade-na";
+      }
+      recomputeWhatIf();
+    });
+  });
+  buildWhatIf();
+}
+
 // ─── Grade helpers ─────────────────────────────────────────────
+
 function marksToGrade(marks) {
   if (marks >= 90) return "O";
   if (marks >= 80) return "A+";
@@ -154,7 +232,8 @@ initDrumPicker("semesterSelect", (semester) => {
 
   if (!semester) return;
 
-  currentSemSubjects = semesterData[semester];
+  currentActiveSem    = Number(semester);
+  currentSemSubjects  = semesterData[semester];
 
   currentSemSubjects.forEach((item, index) => {
     const isHeavy = item.credit >= 4;
@@ -550,3 +629,6 @@ document.getElementById("plannerCalculate").addEventListener("click", () => {
     `;
   }
 });
+
+// ─── Start Firebase real-time sync ────────────────────────────
+initFirebaseSync();

@@ -1,30 +1,76 @@
-// admin-script.js
+// admin-script.js — Firebase Realtime Database Edition
 
 // ─── Config ──────────────────────────────────────────────────
-const ADMIN_PASSWORD = "ku@admin2024"; // Change this to your preferred password
-const STORAGE_KEY = "kuAdminSemesterData";
-const SESSION_KEY = "kuAdminLoggedIn";
+const ADMIN_PASSWORD = "ku@admin2024";
+const STORAGE_KEY    = "kuAdminSemesterData";
+const SESSION_KEY    = "kuAdminLoggedIn";
+const FB_PATH        = "semesterData";
 
 // ─── State ───────────────────────────────────────────────────
-let currentSem = 1;
-let adminData  = {};   // working copy
+let currentSem         = 1;
+let adminData          = {};
+let db                 = null;
 let pendingDeleteIndex = null;
 let pendingDeleteSem   = null;
 
-// ─── Init ────────────────────────────────────────────────────
-window.addEventListener("DOMContentLoaded", () => {
-  // Check session
-  if (sessionStorage.getItem(SESSION_KEY) === "true") {
-    showPanel();
+// ─── Firebase Helpers ─────────────────────────────────────────
+function initFirebase() {
+  if (typeof firebase === "undefined") return false;
+  try {
+    db = firebase.database();
+    return true;
+  } catch (e) {
+    console.warn("Firebase init error:", e);
+    return false;
   }
+}
 
-  // Enter key on password input
-  document.getElementById("adminPassword").addEventListener("keydown", (e) => {
+function setFbStatus(state) {
+  const el  = document.getElementById("firebaseStatus");
+  const txt = document.getElementById("statusText");
+  if (!el) return;
+  el.className = `firebase-status ${state}`;
+  txt.textContent = {
+    connecting: "Connecting to Firebase…",
+    connected:  "Firebase Connected",
+    saving:     "Saving to Firebase…",
+    saved:      "All Changes Saved",
+    offline:    "Offline — Local Only",
+    error:      "Firebase Sync Error"
+  }[state] || state;
+}
+
+function normalizeFirebaseArray(val) {
+  // Firebase may return arrays as {0:{…}, 1:{…}} — normalize back to []
+  if (!val) return [];
+  return Array.isArray(val) ? val : Object.values(val);
+}
+
+function getDefaultData() {
+  const data = {};
+  for (let s = 1; s <= 8; s++) {
+    data[s] = semesterData[s].map(item => ({ ...item }));
+  }
+  return data;
+}
+
+// ─── DOMContentLoaded ─────────────────────────────────────────
+window.addEventListener("DOMContentLoaded", () => {
+  if (sessionStorage.getItem(SESSION_KEY) === "true") showPanel();
+
+  document.getElementById("adminPassword").addEventListener("keydown", e => {
     if (e.key === "Enter") attemptLogin();
+  });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") closeModal();
+  });
+  ["newSubjectName", "newSubjectCredit"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("keydown", e => { if (e.key === "Enter") addSubject(); });
   });
 });
 
-// ─── Auth ────────────────────────────────────────────────────
+// ─── Auth ─────────────────────────────────────────────────────
 function attemptLogin() {
   const val = document.getElementById("adminPassword").value;
   const err = document.getElementById("loginError");
@@ -37,7 +83,7 @@ function attemptLogin() {
     setTimeout(showPanel, 400);
   } else {
     err.classList.remove("show");
-    void err.offsetWidth; // trigger reflow for shake
+    void err.offsetWidth;
     err.classList.add("show");
     document.getElementById("adminPassword").value = "";
     document.getElementById("adminPassword").focus();
@@ -45,7 +91,7 @@ function attemptLogin() {
 }
 
 function togglePwVisibility() {
-  const inp = document.getElementById("adminPassword");
+  const inp  = document.getElementById("adminPassword");
   const icon = document.getElementById("eyeIcon");
   if (inp.type === "password") {
     inp.type = "text";
@@ -63,61 +109,93 @@ function logout() {
   document.getElementById("adminPassword").value = "";
 }
 
-function showPanel() {
+async function showPanel() {
   document.getElementById("loginOverlay").style.display = "none";
   document.getElementById("adminWrapper").style.display = "flex";
-  loadData();
+  const fbOk = initFirebase();
+  await loadData(fbOk);
   switchSem(1);
 }
 
-// ─── Data Loading / Saving ───────────────────────────────────
-function loadData() {
+// ─── Load Data ────────────────────────────────────────────────
+async function loadData(fbOk = false) {
+  // 1. Apply localStorage cache instantly (fast)
   const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored) {
-    adminData = JSON.parse(stored);
+  adminData = stored ? JSON.parse(stored) : getDefaultData();
+  updateAllCounts();
+
+  // 2. Fetch from Firebase (authoritative source)
+  if (fbOk && db) {
+    setFbStatus("connecting");
+    try {
+      const snap = await db.ref(FB_PATH).once("value");
+      const fbData = snap.val();
+      if (fbData) {
+        // Firebase has data — use it
+        adminData = {};
+        for (let s = 1; s <= 8; s++) {
+          adminData[s] = fbData[s] ? normalizeFirebaseArray(fbData[s]) : (semesterData[s] || []).map(i => ({...i}));
+        }
+      } else {
+        // First run — push defaults to Firebase
+        await db.ref(FB_PATH).set(adminData);
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(adminData));
+      updateAllCounts();
+      setFbStatus("connected");
+    } catch (e) {
+      console.warn("Firebase load error:", e);
+      setFbStatus("error");
+      showToast("Firebase unavailable — using local data", "error");
+    }
   } else {
-    // Deep-copy default data
-    adminData = {};
-    for (let s = 1; s <= 8; s++) {
-      adminData[s] = semesterData[s].map(item => ({ ...item }));
+    setFbStatus("offline");
+  }
+}
+
+// ─── Save Data ────────────────────────────────────────────────
+async function saveData() {
+  updateAllCounts();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(adminData));
+
+  if (db) {
+    setFbStatus("saving");
+    try {
+      await db.ref(FB_PATH).set(adminData);
+      setFbStatus("saved");
+      setTimeout(() => setFbStatus("connected"), 2000);
+    } catch (e) {
+      console.warn("Firebase save error:", e);
+      setFbStatus("error");
+      showToast("Saved locally — Firebase sync failed", "error");
     }
   }
-  updateAllCounts();
 }
 
-function saveData() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(adminData));
-  updateAllCounts();
-}
-
+// ─── Reset to Default ─────────────────────────────────────────
 function resetToDefault() {
   openModal(
     "Reset All Data?",
-    "This will restore all semesters to the original default subjects. All your custom changes will be lost.",
+    "This will restore all semesters to the original default subjects. All custom changes will be lost.",
     "Reset",
-    () => {
-      adminData = {};
-      for (let s = 1; s <= 8; s++) {
-        adminData[s] = semesterData[s].map(item => ({ ...item }));
-      }
-      saveData();
+    async () => {
+      adminData = getDefaultData();
+      await saveData();
       renderSemester(currentSem);
-      showToast("Data reset to defaults", "info");
+      showToast("Reset to defaults", "info");
     }
   );
 }
 
-// ─── Semester UI ─────────────────────────────────────────────
+// ─── Semester UI ──────────────────────────────────────────────
 function switchSem(sem) {
   currentSem = sem;
-  document.querySelectorAll(".sem-tab").forEach(t => {
-    t.classList.toggle("active", Number(t.dataset.sem) === sem);
-  });
+  document.querySelectorAll(".sem-tab").forEach(t =>
+    t.classList.toggle("active", Number(t.dataset.sem) === sem)
+  );
   document.getElementById("topbarTitle").textContent = `Semester ${sem} — Subjects`;
   renderSemester(sem);
   updateTopbarStats(sem);
-
-  // Close mobile sidebar
   if (window.innerWidth <= 900) closeSidebar();
 }
 
@@ -129,10 +207,9 @@ function updateAllCounts() {
 }
 
 function updateTopbarStats(sem) {
-  const subjects = adminData[sem] || [];
-  const totalCredits = subjects.reduce((acc, s) => acc + s.credit, 0);
-  const el = document.getElementById("topbarStats");
-  el.innerHTML = `
+  const subjects     = adminData[sem] || [];
+  const totalCredits = subjects.reduce((a, s) => a + s.credit, 0);
+  document.getElementById("topbarStats").innerHTML = `
     <div class="stat-chip">${subjects.length} Subjects</div>
     <div class="stat-chip green">${totalCredits} Total Credits</div>
   `;
@@ -141,18 +218,16 @@ function updateTopbarStats(sem) {
 // ─── Render Subject List ──────────────────────────────────────
 function renderSemester(sem) {
   const subjects = adminData[sem] || [];
-  const list = document.getElementById("subjectsList");
-  const badge = document.getElementById("listBadge");
-
+  const list     = document.getElementById("subjectsList");
+  const badge    = document.getElementById("listBadge");
   badge.textContent = `${subjects.length} subject${subjects.length !== 1 ? "s" : ""}`;
 
   if (subjects.length === 0) {
     list.innerHTML = `
       <div class="empty-state">
-        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
         <p>No subjects in Semester ${sem}. Add one above.</p>
-      </div>
-    `;
+      </div>`;
     return;
   }
 
@@ -183,44 +258,27 @@ function buildItemHTML(subj, idx) {
       <button class="item-del-btn" onclick="confirmDelete(${idx})" title="Delete">
         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
       </button>
-    </div>
-  `;
+    </div>`;
 }
 
-// ─── Add Subject ─────────────────────────────────────────────
-function addSubject() {
-  const nameEl   = document.getElementById("newSubjectName");
+// ─── Add Subject ──────────────────────────────────────────────
+async function addSubject() {
+  const nameEl  = document.getElementById("newSubjectName");
   const creditEl = document.getElementById("newSubjectCredit");
-  const name     = nameEl.value.trim();
-  const credit   = parseInt(creditEl.value);
+  const name    = nameEl.value.trim();
+  const credit  = parseInt(creditEl.value);
 
-  if (!name) {
-    showToast("Please enter a subject name", "error");
-    nameEl.focus();
-    return;
-  }
-  if (isNaN(credit) || credit < 1 || credit > 10) {
-    showToast("Credits must be between 1 and 10", "error");
-    creditEl.focus();
-    return;
+  if (!name)                              { showToast("Enter a subject name", "error"); nameEl.focus(); return; }
+  if (isNaN(credit) || credit < 1 || credit > 10) { showToast("Credits must be 1–10", "error"); creditEl.focus(); return; }
+  if (adminData[currentSem].some(s => s.subject.toLowerCase() === name.toLowerCase())) {
+    showToast("Subject already exists in this semester", "error"); return;
   }
 
-  // Check for duplicate in this semester
-  const sem = adminData[currentSem];
-  if (sem.some(s => s.subject.toLowerCase() === name.toLowerCase())) {
-    showToast("Subject already exists in this semester", "error");
-    return;
-  }
-
-  sem.push({ subject: name, credit });
-  saveData();
+  adminData[currentSem].push({ subject: name, credit });
+  await saveData();
   renderSemester(currentSem);
   updateTopbarStats(currentSem);
-
-  nameEl.value = "";
-  creditEl.value = "";
-  nameEl.focus();
-
+  nameEl.value = ""; creditEl.value = ""; nameEl.focus();
   showToast(`"${name}" added to Semester ${currentSem}`, "success");
 }
 
@@ -229,12 +287,11 @@ function enterEditMode(idx) {
   const subj = adminData[currentSem][idx];
   const item = document.getElementById(`item-${idx}`);
   if (!item) return;
-
   item.classList.add("editing");
   item.innerHTML = `
     <div class="item-num">${idx + 1}</div>
     <div class="edit-inputs">
-      <input type="text" class="edit-input name" id="edit-name-${idx}" value="${subj.subject}" maxlength="80">
+      <input type="text"   class="edit-input name"   id="edit-name-${idx}"   value="${subj.subject}" maxlength="80">
       <input type="number" class="edit-input credit" id="edit-credit-${idx}" value="${subj.credit}" min="1" max="10">
     </div>
     <button class="save-edit-btn" onclick="saveEdit(${idx})">Save</button>
@@ -242,29 +299,19 @@ function enterEditMode(idx) {
       <button class="item-del-btn" onclick="cancelEdit(${idx})" title="Cancel">
         <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
-    </div>
-  `;
-
-  const nameInp = document.getElementById(`edit-name-${idx}`);
-  nameInp.focus();
-  nameInp.select();
-  nameInp.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") saveEdit(idx);
-    if (e.key === "Escape") cancelEdit(idx);
-  });
+    </div>`;
+  const ni = document.getElementById(`edit-name-${idx}`);
+  ni.focus(); ni.select();
+  ni.addEventListener("keydown", e => { if (e.key === "Enter") saveEdit(idx); if (e.key === "Escape") cancelEdit(idx); });
 }
 
-function saveEdit(idx) {
-  const nameEl   = document.getElementById(`edit-name-${idx}`);
-  const creditEl = document.getElementById(`edit-credit-${idx}`);
-  const name     = nameEl.value.trim();
-  const credit   = parseInt(creditEl.value);
-
-  if (!name) { showToast("Subject name cannot be empty", "error"); nameEl.focus(); return; }
-  if (isNaN(credit) || credit < 1 || credit > 10) { showToast("Credits must be between 1 and 10", "error"); creditEl.focus(); return; }
-
+async function saveEdit(idx) {
+  const name   = document.getElementById(`edit-name-${idx}`).value.trim();
+  const credit = parseInt(document.getElementById(`edit-credit-${idx}`).value);
+  if (!name)                              { showToast("Name cannot be empty", "error"); return; }
+  if (isNaN(credit) || credit < 1 || credit > 10) { showToast("Credits must be 1–10", "error"); return; }
   adminData[currentSem][idx] = { subject: name, credit };
-  saveData();
+  await saveData();
   renderSemester(currentSem);
   updateTopbarStats(currentSem);
   showToast("Subject updated", "success");
@@ -280,38 +327,31 @@ function cancelEdit(idx) {
 // ─── Delete Subject ───────────────────────────────────────────
 function confirmDelete(idx) {
   const subj = adminData[currentSem][idx];
-  pendingDeleteIndex = idx;
-  pendingDeleteSem   = currentSem;
   openModal(
     "Delete Subject?",
-    `Remove <strong style="color:#e8eaf0">"${subj.subject}"</strong> (${subj.credit} credits) from Semester ${currentSem}?`,
+    `Remove <strong style="color:#e8eaf0">"${subj.subject}"</strong> (${subj.credit} cr) from Semester ${currentSem}?`,
     "Delete",
-    () => {
-      adminData[pendingDeleteSem].splice(pendingDeleteIndex, 1);
-      saveData();
+    async () => {
+      const name = adminData[currentSem][idx].subject;
+      adminData[currentSem].splice(idx, 1);
+      await saveData();
       renderSemester(currentSem);
       updateTopbarStats(currentSem);
-      showToast(`"${subj.subject}" deleted`, "error");
+      showToast(`"${name}" deleted`, "error");
     }
   );
 }
 
 // ─── Modal ────────────────────────────────────────────────────
 let modalCallback = null;
-
 function openModal(title, body, confirmLabel, onConfirm) {
-  document.getElementById("modalTitle").textContent = title;
-  document.getElementById("modalBody").innerHTML = body;
+  document.getElementById("modalTitle").textContent  = title;
+  document.getElementById("modalBody").innerHTML     = body;
   document.getElementById("modalConfirm").textContent = confirmLabel;
   modalCallback = onConfirm;
   document.getElementById("modalOverlay").classList.add("show");
-
-  document.getElementById("modalConfirm").onclick = () => {
-    if (modalCallback) modalCallback();
-    closeModal();
-  };
+  document.getElementById("modalConfirm").onclick = () => { if (modalCallback) modalCallback(); closeModal(); };
 }
-
 function closeModal() {
   document.getElementById("modalOverlay").classList.remove("show");
   modalCallback = null;
@@ -328,34 +368,16 @@ function showToast(msg, type = "success") {
   };
   toast.className = `toast show ${type}`;
   toast.innerHTML = `${icons[type] || ""} ${msg}`;
-
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    toast.classList.remove("show");
-  }, 3000);
+  toastTimer = setTimeout(() => toast.classList.remove("show"), 3200);
 }
 
 // ─── Mobile Sidebar ───────────────────────────────────────────
 function toggleSidebar() {
-  const sidebar   = document.getElementById("sidebar");
-  const mobOverlay = document.getElementById("mobOverlay");
-  sidebar.classList.toggle("open");
-  mobOverlay.classList.toggle("show");
+  document.getElementById("sidebar").classList.toggle("open");
+  document.getElementById("mobOverlay").classList.toggle("show");
 }
 function closeSidebar() {
   document.getElementById("sidebar").classList.remove("open");
   document.getElementById("mobOverlay").classList.remove("show");
 }
-
-// ─── Enter key support for add form ──────────────────────────
-document.addEventListener("DOMContentLoaded", () => {
-  ["newSubjectName", "newSubjectCredit"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener("keydown", e => { if (e.key === "Enter") addSubject(); });
-  });
-
-  // Close modal on Escape
-  document.addEventListener("keydown", e => {
-    if (e.key === "Escape") closeModal();
-  });
-});
