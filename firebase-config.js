@@ -1,17 +1,13 @@
 // firebase-config.js
-// ─── FILL IN YOUR FIREBASE PROJECT DETAILS BELOW ────────────────
-// 1. Go to https://console.firebase.google.com
-// 2. Create a project → Add Web App → copy the config object below
-// 3. Enable Realtime Database (Build → Realtime Database → Create Database → Test mode)
 
 const firebaseConfig = {
-  apiKey:            "YOUR_API_KEY",
-  authDomain:        "YOUR_PROJECT_ID.firebaseapp.com",
-  databaseURL:       "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-  projectId:         "YOUR_PROJECT_ID",
-  storageBucket:     "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId:             "YOUR_APP_ID"
+  apiKey:            "AIzaSyAZTN0f6IfjMj0-3UnAPMMoHNPKkW1hRr4",
+  authDomain:        "ku-calculator.firebaseapp.com",
+  databaseURL:       "https://ku-calculator-default-rtdb.firebaseio.com",
+  projectId:         "ku-calculator",
+  storageBucket:     "ku-calculator.firebasestorage.app",
+  messagingSenderId: "639971125149",
+  appId:             "1:639971125149:web:288a164634a6114971b174"
 };
 
 // Initialize Firebase app
