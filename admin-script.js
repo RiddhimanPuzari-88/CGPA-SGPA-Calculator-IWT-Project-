@@ -1,9 +1,13 @@
 // admin-script.js — Firebase Realtime Database Edition
 
-// ─── Config ──────────────────────────────────────────────────
-const ADMIN_PASSWORD = "ku@admin2024";
+// ─── Admin Accounts ──────────────────────────────────────────
+const ADMIN_ACCOUNTS = [
+  { username: "tandrali", password: "tandrali123", displayName: "Tandrali" },
+  { username: "riddhi",   password: "riddhi1234",  displayName: "Riddhiman" }
+];
 const STORAGE_KEY    = "kuAdminSemesterData";
 const SESSION_KEY    = "kuAdminLoggedIn";
+const SESSION_USER   = "kuAdminUser";
 const FB_PATH        = "semesterData";
 
 // ─── State ───────────────────────────────────────────────────
@@ -58,8 +62,10 @@ function getDefaultData() {
 window.addEventListener("DOMContentLoaded", () => {
   if (sessionStorage.getItem(SESSION_KEY) === "true") showPanel();
 
-  document.getElementById("adminPassword").addEventListener("keydown", e => {
-    if (e.key === "Enter") attemptLogin();
+  // Enter key support
+  ["adminUsername", "adminPassword"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("keydown", e => { if (e.key === "Enter") attemptLogin(); });
   });
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") closeModal();
@@ -72,15 +78,21 @@ window.addEventListener("DOMContentLoaded", () => {
 
 // ─── Auth ─────────────────────────────────────────────────────
 function attemptLogin() {
-  const val = document.getElementById("adminPassword").value;
+  const username = (document.getElementById("adminUsername").value || "").trim().toLowerCase();
+  const password = document.getElementById("adminPassword").value;
   const err = document.getElementById("loginError");
   const btn = document.getElementById("loginBtn");
 
-  if (val === ADMIN_PASSWORD) {
+  const match = ADMIN_ACCOUNTS.find(
+    a => a.username === username && a.password === password
+  );
+
+  if (match) {
     sessionStorage.setItem(SESSION_KEY, "true");
+    sessionStorage.setItem(SESSION_USER, JSON.stringify({ username: match.username, displayName: match.displayName }));
     err.classList.remove("show");
-    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Access Granted`;
-    setTimeout(showPanel, 400);
+    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Welcome, ${match.displayName}!`;
+    setTimeout(showPanel, 420);
   } else {
     err.classList.remove("show");
     void err.offsetWidth;
@@ -104,14 +116,27 @@ function togglePwVisibility() {
 
 function logout() {
   sessionStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(SESSION_USER);
   document.getElementById("adminWrapper").style.display = "none";
   document.getElementById("loginOverlay").style.display = "flex";
+  document.getElementById("adminUsername").value = "";
   document.getElementById("adminPassword").value = "";
 }
 
 async function showPanel() {
   document.getElementById("loginOverlay").style.display = "none";
   document.getElementById("adminWrapper").style.display = "flex";
+
+  // Show logged-in user in sidebar
+  const userRaw = sessionStorage.getItem(SESSION_USER);
+  if (userRaw) {
+    const user = JSON.parse(userRaw);
+    const nameEl   = document.getElementById("userNameDisplay");
+    const avatarEl = document.getElementById("userAvatar");
+    if (nameEl)   nameEl.textContent   = user.displayName;
+    if (avatarEl) avatarEl.textContent = user.displayName.charAt(0).toUpperCase();
+  }
+
   const fbOk = initFirebase();
   await loadData(fbOk);
   switchSem(1);

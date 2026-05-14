@@ -1,0 +1,242 @@
+================================================================================
+        KU GRADE CALCULATOR — PROJECT DOCUMENTATION
+        Internet and Web Technologies (IWT) Submission
+================================================================================
+
+PROJECT TITLE   : KU SGPA & CGPA Grade Calculator
+SUBJECT         : Internet and Web Technologies (IWT)
+DEPARTMENT      : Computer Science and Engineering (CSE)
+UNIVERSITY      : Kaziranga University
+BATCH           : 2023
+SEMESTER        : 6th Semester
+
+
+--------------------------------------------------------------------------------
+TEAM MEMBERS
+--------------------------------------------------------------------------------
+
+  1. Riddhiman Puzari
+     Role     : Lead Developer — Frontend, Backend Logic, Firebase Integration
+     GitHub   : https://github.com/RiddhimanPuzari-88
+     LinkedIn : https://www.linkedin.com/in/riddhiman-puzari-b94353251/
+
+  2. Tandrali [Full name]
+     Role     : Co-Developer — UI Design, Content & Testing
+
+
+--------------------------------------------------------------------------------
+PROJECT DESCRIPTION
+--------------------------------------------------------------------------------
+
+This is a fully functional, responsive web application built for Kaziranga
+University's CSE 2023 batch students to calculate their SGPA (Semester Grade
+Point Average) and CGPA (Cumulative Grade Point Average) based on the official
+university grading system.
+
+The project consists of TWO connected web pages:
+  1. Main Calculator  : index.html  (student-facing)
+  2. Admin Panel      : admin.html  (admin-only, password protected)
+
+
+--------------------------------------------------------------------------------
+LIVE DEPLOYMENT
+--------------------------------------------------------------------------------
+
+  Main Calculator : https://iwt-lyart.vercel.app/
+  Admin Panel     : https://iwt-lyart.vercel.app/admin.html
+  GitHub Repo     : https://github.com/RiddhimanPuzari-88/CGPA-SGPA-Calculator-IWT-Project-
+  Deployed On     : Vercel (Continuous Deployment from GitHub)
+
+
+--------------------------------------------------------------------------------
+FEATURES — MAIN CALCULATOR (index.html)
+--------------------------------------------------------------------------------
+
+  1. SGPA Calculator
+     - Select any semester (1–8) using a smooth drum-picker control
+     - Dynamically loads subjects and credits for the selected semester
+     - Enter marks (0–100) per subject; live grade display (O, A+, A, B+, B, C, F)
+     - Calculates SGPA using the KU grading formula
+     - Subject Impact Analysis with animated progress bars
+     - What-If Calculator: Simulate "what if I score a different grade?"
+
+  2. CGPA Calculator
+     - Select completed semesters
+     - Enter SGPA for each semester
+     - Computes overall CGPA
+     - Performance Summary: Best Semester, Lowest Semester, Recent Trend
+     - Semester SGPA Trend Chart (bar chart via Chart.js)
+
+  3. Target CGPA Planner
+     - Input: semesters completed, current CGPA, target CGPA
+     - Calculates the required SGPA per remaining semester
+     - Shows if the target is impossible (required SGPA > 10)
+
+  4. UI/UX Features
+     - Fully responsive (mobile, tablet, desktop)
+     - Sticky transparent navbar with glassmorphism scroll effect
+     - Collapsible Notice bar with grading policy information
+     - Contact Developer panel with LinkedIn and GitHub links
+     - Inter font (Google Fonts), smooth CSS animations
+
+
+--------------------------------------------------------------------------------
+FEATURES — ADMIN PANEL (admin.html)
+--------------------------------------------------------------------------------
+
+  1. Authentication
+     - Username + Password protected login page
+     - Two admin accounts (see credentials section below)
+     - Session-based login (persists until browser tab is closed)
+
+  2. Subject Management
+     - View all subjects for any semester (1–8) via sidebar navigation
+     - Add new subjects: enter name + credit value
+     - Edit existing subjects (inline editing with keyboard shortcuts)
+     - Delete subjects with confirmation modal
+     - Reset to original default subjects at any time
+
+  3. Firebase Real-Time Sync
+     - All changes save instantly to Firebase Realtime Database
+     - The main calculator reflects admin changes within ~1 second globally
+     - Offline fallback: if Firebase is unavailable, data is cached in localStorage
+     - Live Firebase connection status indicator (Connected / Offline / Saving)
+
+  4. Design
+     - Matches the main calculator's theme (light, KU red #8B0000)
+     - Responsive sidebar with hamburger menu on mobile
+     - Toast notifications for all actions
+     - Subject count and total credits shown per semester
+
+
+--------------------------------------------------------------------------------
+ADMIN CREDENTIALS
+--------------------------------------------------------------------------------
+
+  Admin 1:
+    Username : tandrali
+    Password : tandrali123
+
+  Admin 2:
+    Username : riddhi
+    Password : riddhi1234
+
+
+--------------------------------------------------------------------------------
+GRADING SYSTEM (KU 2023 Batch)
+--------------------------------------------------------------------------------
+
+  Marks Range    Grade    Grade Points
+  -----------------------------------------
+  90 – 100       O        10
+  80 – 89        A+        9
+  70 – 79        A         8
+  60 – 69        B+        7
+  50 – 59        B         6
+  40 – 49        C         5
+  Below 40       F         0
+
+  SGPA Formula:
+    SGPA = Σ(Grade Points × Credits) / Σ(Credits)
+
+  CGPA Formula:
+    CGPA = Σ(SGPA of all semesters) / Number of semesters
+
+
+--------------------------------------------------------------------------------
+TECHNOLOGY STACK
+--------------------------------------------------------------------------------
+
+  Frontend
+  --------
+  HTML5           — Semantic page structure
+  CSS3            — Custom styling, animations, glassmorphism, responsive design
+  Vanilla JS      — All application logic, DOM manipulation, Firebase integration
+  Google Fonts    — Inter typeface
+  Chart.js 4.4.0  — Bar chart for SGPA trend visualization (CDN)
+
+  Backend / Database
+  ------------------
+  Firebase Realtime Database (Google) — Cloud NoSQL database for subject data
+    - Real-time sync: admin changes reflect on all student devices instantly
+    - Free Spark plan (no server required)
+
+  Deployment
+  ----------
+  Vercel          — Static site hosting with auto-deploy from GitHub
+  GitHub          — Version control and source code management
+
+  No server-side language (PHP, Node.js, etc.) is used — this is a 100% static
+  web application with a cloud database.
+
+
+--------------------------------------------------------------------------------
+PROJECT FILE STRUCTURE
+--------------------------------------------------------------------------------
+
+  IWT/
+  ├── index.html          — Main SGPA/CGPA Calculator page
+  ├── style.css           — Main calculator stylesheet
+  ├── script.js           — Main calculator logic + Firebase sync
+  ├── data.js             — Default semester subject data (fallback)
+  │
+  ├── admin.html          — Admin panel page
+  ├── admin-style.css     — Admin panel stylesheet
+  ├── admin-script.js     — Admin panel logic + Firebase CRUD
+  │
+  ├── firebase-config.js  — Firebase project configuration
+  │
+  ├── logo.png            — Kaziranga University logo
+  └── profile-pic.jpg     — Developer profile picture
+
+
+--------------------------------------------------------------------------------
+HOW THE TWO PAGES ARE CONNECTED
+--------------------------------------------------------------------------------
+
+  Data Flow:
+
+  admin.html  →  Firebase Realtime DB  →  index.html
+  (Admin writes)    (/semesterData/)      (Student reads)
+
+  1. Admin logs in → edits subjects → changes saved to Firebase in real-time
+  2. Student opens the calculator → Firebase listener fetches the latest data
+  3. If Firebase is unavailable → localStorage cache is used as fallback
+  4. Default data.js is the last-resort fallback (original KU subjects)
+
+
+--------------------------------------------------------------------------------
+HOW TO RUN LOCALLY
+--------------------------------------------------------------------------------
+
+  Since this is a static website, no server installation is needed.
+
+  Method 1 — Direct:
+    Open index.html directly in any modern browser (Chrome, Firefox, Edge)
+    Note: Firebase sync requires an internet connection
+
+  Method 2 — VS Code Live Server:
+    1. Install the "Live Server" extension in VS Code
+    2. Right-click index.html → "Open with Live Server"
+    3. Admin panel: visit http://127.0.0.1:5500/admin.html
+
+
+--------------------------------------------------------------------------------
+KEY TECHNICAL CONCEPTS DEMONSTRATED
+--------------------------------------------------------------------------------
+
+  1. Responsive Web Design (CSS Grid, Flexbox, Media Queries)
+  2. DOM Manipulation (dynamic subject rendering with JavaScript)
+  3. Event-Driven Programming (input listeners, scroll events, intersection observers)
+  4. API Integration (Firebase Realtime Database REST via SDK)
+  5. Real-time Data Synchronization (Firebase .on('value') listener)
+  6. Client-side Authentication (session-based, localStorage/sessionStorage)
+  7. CSS Animations & Transitions (micro-interactions, glassmorphism)
+  8. Data Visualization (Chart.js bar chart)
+  9. Progressive Enhancement (Firebase → localStorage → default fallback chain)
+  10. Continuous Deployment (GitHub → Vercel CI/CD pipeline)
+
+
+================================================================================
+                          END OF DOCUMENTATION
+================================================================================
