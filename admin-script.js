@@ -1,11 +1,7 @@
 // admin-script.js — Firebase Realtime Database Edition
 
 // ─── Admin Accounts ──────────────────────────────────────────
-const ADMIN_ACCOUNTS = [
-  { username: "tandrali", password: "tandrali123", displayName: "Tandrali" },
-  { username: "riddhi",   password: "riddhi1234",  displayName: "Riddhiman" },
-  { username: "priya",    password: "priya1234",   displayName: "Priya" }
-];
+// Previously there is hardcoded paswrod and username      i will migrTE IT INTO firbase authrncation
 const STORAGE_KEY    = "kuAdminSemesterData";
 const SESSION_KEY    = "kuAdminLoggedIn";
 const SESSION_USER   = "kuAdminUser";
