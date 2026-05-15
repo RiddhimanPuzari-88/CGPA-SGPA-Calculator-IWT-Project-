@@ -1,7 +1,7 @@
 // firebase-config.js
 
 const firebaseConfig = {
-  apiKey:            "AIzaSyAZTN0f6IfjMj0-3UnAPMMoHNPKkW1hRr4",
+  apiKey:            "AIzaSyBJIqdVwetLQ0upqWL0eK5pQr8NEtd5XDs",
   authDomain:        "ku-calculator.firebaseapp.com",
   databaseURL:       "https://ku-calculator-default-rtdb.firebaseio.com",
   projectId:         "ku-calculator",
